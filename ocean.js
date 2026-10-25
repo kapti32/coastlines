@@ -1,5 +1,4 @@
 (function(){
-/* shared GLSL: noise, caustics and the underwater light model used by the backdrop and every creature */
 var COMMON=[
 'uniform float uTime;uniform float uExp;uniform float uSat;uniform vec2 uRes;uniform vec3 uCamPos;uniform vec3 uAbsorb;uniform vec3 uHazeUp;uniform vec3 uHazeDn;uniform vec3 uSunW;uniform float uSunI;uniform float uAmb;',
 'float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}',
@@ -9,7 +8,6 @@ var COMMON=[
 'float ridge(vec2 p,float t){',
 ' vec2 q=p+.75*vec2(vnoise(p*.9+vec2(t*.21,0.)),vnoise(p*.9+vec2(4.3,t*.19)));',
 ' float v=vnoise(q*1.8+vec2(t*.13,-t*.11));return 1.-abs(v*2.-1.);}',
-/* light focused by the rippled surface; p in metres on a horizontal plane */
 'float caus(vec2 p,float t){',
 ' mat2 R1=mat2(.82,.57,-.57,.82),R2=mat2(.55,-.83,.83,.55),R3=mat2(.94,-.34,.34,.94);',
 ' float a=ridge(R1*p*1.15,t*.9),b=ridge(R2*p*2.1+vec2(11.,3.),t*1.25+9.),d=ridge(R3*p*3.7+vec2(5.,17.),t*1.6+3.);',
@@ -33,15 +31,12 @@ var COMMON=[
 ' float lu=dot(col,vec3(.299,.587,.114));return mix(vec3(lu),col,uSat);}',
 'float vig(vec2 q){float v=length(q*vec2(.8,.9));float top=smoothstep(-.25,.95,q.y);return (1.-.28*smoothstep(.55,1.45,v))*(1.-.44*top);}'
 ].join('\n');
-
-/* the water itself: surface seen from below, light shafts, sand floor with caustics, depth haze */
 var BG_VS='varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,1.,1.);}';
 var BG_FS=[
 'precision highp float;',
 'varying vec2 vUv;',
 'uniform float uAspect;uniform float uTan;uniform float uFloorY;uniform mat3 uRot;uniform float uShaft;uniform float uWaveAmp;',
 COMMON,
-/* surface height field: a few travelling wave trains, analytic slope */
 'vec3 wave(vec2 p,float t){',
 ' p+=.22*vec2(vnoise(p*.45+vec2(t*.07,0.)),vnoise(p*.45+vec2(9.,-t*.06)));',
 ' float h=0.;vec2 g=vec2(0.);',
@@ -50,7 +45,6 @@ COMMON,
 '  float k=1.5+fi*1.55;float w=sqrt(9.81*k)*.8;float a=.05*uWaveAmp/(k*.7+.35);',
 '  float ph=dot(dir,p)*k-w*t+fi*1.7;h+=a*sin(ph);g+=a*k*cos(ph)*dir;}',
 ' return vec3(h,g);}',
-/* sunlight seen through the water: patchy shafts that converge toward the sun */
 'float shafts(vec3 ro,vec3 rd,float tmax){',
 ' float s=0.;float dt=min(tmax,26.)/12.;',
 ' for(int i=0;i<12;i++){',
@@ -105,8 +99,6 @@ COMMON,
 ' col=grade(col)*vig(q);',
 ' gl_FragColor=vec4(col,1.);}'
 ].join('\n');
-
-/* silver jack style fish: one lofted body, fins and eyes in a single geometry, animated in the vertex shader */
 var FISH={};
 (function(){
 var THREE=window.THREE;
@@ -123,17 +115,13 @@ FISH.geometry=function(){
       var yy=hh*(sy>0?sy:sy*.9);v(x,yy,hw*cz,sy,0)}}
   for(i=0;i<NS;i++)for(j=0;j<NR;j++){var a0=i*NR+j,a1=i*NR+(j+1)%NR,b0=(i+1)*NR+j,b1=(i+1)*NR+(j+1)%NR;I.push(a0,b0,a1,a1,b0,b1)}
   function poly(pts,part,tone){var b=P.length/3;pts.forEach(function(p){v(p[0],p[1],p[2],tone||0,part)});for(var k=1;k<pts.length-1;k++)I.push(b,b+k,b+k+1)}
-  /* tail: forked */
+
   poly([[-.36,.03,0],[-.505,.14,0],[-.45,.0,0],[-.505,-.14,0],[-.36,-.03,0]],1,0);
-  /* dorsal fins (spiny front one and a longer soft one) */
   poly([[.2,bodyTop(.2)*.97,0],[.13,.215,0],[.05,.2,0],[-.03,bodyTop(-.03)*.97,0]],1,1);
   poly([[-.02,bodyTop(-.02)*.97,0],[-.08,.185,0],[-.2,.165,0],[-.31,.09,0],[-.31,bodyTop(-.31)*.97,0]],1,1);
-  /* anal fin and pelvic fin */
   poly([[-.08,-bodyTop(-.08)*.9,0],[-.13,-.165,0],[-.27,-.1,0],[-.3,-bodyTop(-.3)*.9,0]],1,-1);
   poly([[.1,-bodyTop(.1)*.9,0],[.04,-.15,0],[-.02,-bodyTop(-.02)*.9,0]],1,-1);
-  /* pectoral fins */
   [-1,1].forEach(function(sd){poly([[.2,-.045,sd*.05],[.06,-.1,sd*.13],[.12,-.03,sd*.06]],1,0)});
-  /* eyes */
   [-1,1].forEach(function(sd){var b=P.length/3,cx=.405,cy=.03,cz=sd*.05;v(cx,cy,cz,0,2);for(var k=0;k<8;k++){var a=k/8*6.283;v(cx+Math.cos(a)*.016,cy+Math.sin(a)*.016,cz+sd*.004,0,2)}
     for(k=0;k<8;k++){I.push(b,b+1+k,b+1+(k+1)%8)}});
   var g=new THREE.BufferGeometry();
@@ -199,12 +187,9 @@ FISH.mesh=function(U,count,opt){
   var m=new THREE.Mesh(ig,FISH.material(U,opt));m.frustumCulled=false;return m;
 };
 })();
-
-/* green sea turtle: lofted shell with a generated scute texture, head, neck, tail and four flexing flippers */
 var TURTLE={};
 (function(){
 var THREE=window.THREE;
-/* ---- scute texture (colour + height), drawn once ---- */
 function h1(n){var s=Math.sin(n*127.1+311.7)*43758.5453;return s-Math.floor(s)}
 function vn(x,y){var ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);
   var a=h1(ix+iy*57.3),b=h1(ix+1+iy*57.3),c=h1(ix+(iy+1)*57.3),d=h1(ix+1+(iy+1)*57.3);return a+(b-a)*fx+(c-a)*fy+(a-b-c+d)*fx*fy}
@@ -248,7 +233,6 @@ TURTLE.textures=function(W,H){
   [t1,t2].forEach(function(t){t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;t.anisotropy=4;t.needsUpdate=true});
   return {tex:t1,bump:t2};
 };
-/* ---- geometry ---- */
 function finish(P,UV,PT,TN,FX,I){
   var g=new THREE.BufferGeometry();
   g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));
@@ -279,7 +263,7 @@ function shellGeo(){
     I.push(bot[k][j],bot[k1][j],bot[k][j+1],bot[k1][j],bot[k1][j+1],bot[k][j+1])}}
   return finish(P,UV,PT,TN,FX,I);
 }
-function lathe(prof,NR,x0,tone){ /* prof: [[x,r],...] along +x, returns skin geometry */
+function lathe(prof,NR,x0,tone){
   var P=[],UV=[],PT=[],TN=[],FX=[],I=[],i,j;
   for(i=0;i<prof.length;i++)for(j=0;j<NR;j++){var a=j/NR*Math.PI*2,sy=Math.sin(a),cz=Math.cos(a);
     P.push(prof[i][0],prof[i][1]*sy*(sy>0?.9:.78),prof[i][1]*cz);UV.push(0,0);PT.push(2);TN.push(sy);FX.push(0)}
@@ -311,7 +295,6 @@ function paddleGeo(L,chord,sweep,sd,droop){
     if(sd>0){I.push(c0,c1,d0,c1,d1,d0)}else{I.push(c0,d0,c1,c1,d0,d1)}}
   return finish(P,UV,PT,TN,FX,I);
 }
-/* ---- material ---- */
 var TVS=[
 'attribute float aPart;attribute float aTone;attribute float aFlex;',
 'uniform float uTime;uniform float uBend;uniform float uPhase;',
@@ -382,8 +365,6 @@ TURTLE.pose=function(root,ph){
   d.head.rotation.set(0,Math.sin(ph*.5)*.05,Math.sin(ph-.4)*.03);
 };
 })();
-
-/* drifting sediment that lights up inside the sun shafts */
 var SNOW={};
 (function(){
 var THREE=window.THREE;
@@ -419,8 +400,6 @@ SNOW.make=function(U,count){
   m.frustumCulled=false;m.renderOrder=5;return m;
 };
 })();
-
-/* the live scene: camera drift, creature paths, day and deep moods, motion control */
 (function(){
 "use strict";
 var canvas=document.getElementById('water'),root=document.documentElement;
@@ -466,8 +445,6 @@ var schoolC=FISH.mesh(U,small?120:260,{size:.12,spread:1.8,beat:15,silver:.85,ba
 scene.add(schoolA);scene.add(schoolC);
 var turtle=TURTLE.build(U,small?384:512);turtle.rotation.order='YZX';turtle.scale.setScalar(1.3);scene.add(turtle);
 var snow=SNOW.make(U,small?260:620);scene.add(snow);
-
-/* ---- paths: ellipses in front of the camera (the camera looks down -z) ---- */
 var P={t:{phi:Math.random()*6.28,c:4.6,rz:1.5,y:-2.35,speed:.5,dir:1},a:{phi:Math.random()*6.28,c:9.5,rz:2.6,y:-2.6,speed:.7,dir:-1},c:{phi:Math.random()*6.28,c:16,rz:3.2,y:-3.1,speed:1.0,dir:1}};
 var W=1,H=1,aspect=1,qScale=1,slow=0,frames=0,accum=0;
 function halfW(z){return Math.tan(26*Math.PI/180)*aspect*z}
@@ -480,12 +457,10 @@ function ell(p,dt,key,ry){
 var tmpV=V3(0,0,0);
 var state={t:0,beat:0};
 function stepScene(dt,t){
-  /* camera drifts like a free diver */
   cam.position.set(Math.sin(t*.05)*.5+Math.sin(t*.13)*.15,-1.7+Math.sin(t*.09)*.1,0);
   cam.rotation.set(-.1+Math.sin(t*.07)*.012,Math.sin(t*.04)*.05,Math.sin(t*.06)*.01);
   cam.updateMatrixWorld(true);
   U.uCamPos.value.copy(cam.position);U.uRot.value.setFromMatrix4(cam.matrixWorld);U.uTime.value=t;
-  /* turtle */
   var q=ell(P.t,dt,'t',1.6),sp=Math.sqrt(q.vx*q.vx+q.vz*q.vz)+1e-6;
   var ph=state.beat;state.beat+=dt*1.8;
   var yy=P.t.y+.16*Math.sin(t*.17)+.035*Math.sin(ph-.8);
@@ -493,7 +468,6 @@ function stepScene(dt,t){
   var yaw=Math.atan2(-q.vz,q.vx),pitch=.05*Math.cos(t*.17)+.05*Math.sin(ph-.8);
   turtle.rotation.set(Math.sin(ph)*.05,yaw,pitch);
   TURTLE.pose(turtle,ph);
-  /* schools */
   var a=ell(P.a,dt,'a',2.2);
   schoolA.material.uniforms.uCen.value.set(a.x,P.a.y+.45*Math.sin(t*.11),a.z);
   schoolA.material.uniforms.uVel.value.set(a.vx,0,a.vz);
@@ -534,5 +508,4 @@ document.addEventListener('cl-motion',function(e){setStill(e.detail&&e.detail.st
 if(mq.addEventListener)mq.addEventListener('change',function(e){setStill(e.matches)});
 },40);
 })();
-
 })();
