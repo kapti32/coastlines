@@ -1,14 +1,3 @@
-/* Coastlines data and sign-in layer.
-
-   This file is the ONLY place that knows where data lives. The pages talk to it through a small database
-   interface (collection/doc/get/set/update/delete/onSnapshot) and a sign-in interface (register/login/logout).
-   Here both are kept in the visitor's own browser (localStorage), so the site works on any static host with no
-   server. That means data is per browser, not shared between people. To share data between people, replace the
-   body of this file with calls to your own API and keep the same function names. See README.md.
-
-   Passwords are never stored as text: each is salted and hashed with PBKDF2-SHA-256 (150,000 rounds) using the
-   browser's Web Crypto. Browser storage can still be read by anyone using that browser, so treat this as a
-   working prototype of the sign-in flow, not as server-grade security. */
 (function(){
 "use strict";
 
@@ -16,8 +5,6 @@ var DB_KEY='cl.db.v1',ACC_KEY='cl.accounts.v1',SES_KEY='cl.session.v1',LOCK_KEY=
 var ITER=150000,SESSION_MS=8*3600*1000,MAX_FAILS=5,LOCK_MS=60*1000;
 
 function err(code,msg){var e=new Error(msg||code);e.code=code;return e}
-
-/* ---------- raw storage ---------- */
 var storageOk=(function(){try{var k='cl.probe';localStorage.setItem(k,'1');localStorage.removeItem(k);return true}catch(e){return false}})();
 var memory={};
 function rawGet(k){try{return storageOk?localStorage.getItem(k):(memory[k]||null)}catch(e){return null}}
@@ -28,8 +15,6 @@ function rawSet(k,v){
 }
 function rawDel(k){try{if(storageOk)localStorage.removeItem(k);else delete memory[k]}catch(e){}}
 function readJson(k){try{return JSON.parse(rawGet(k)||'null')}catch(e){return null}}
-
-/* ---------- accounts and session ---------- */
 var accCache=null;
 function accounts(){
   if(accCache)return accCache;
@@ -69,17 +54,12 @@ function session(){
   if(!a)return null;
   return {uid:a.id,role:isAdminAccount(a)?'admin':a.role,email:a.email};
 }
-/* An account is an admin when its stored role says so, or when its email is listed in CL_CONFIG.adminEmails.
-   The list is a convenience for a static site with no server; anyone who can edit config.js or browser storage
-   can change it, so it is not a security boundary. See README.md. */
 function isAdminAccount(a){
   if(a.role==='admin')return true;
   var list=(window.CL_CONFIG&&window.CL_CONFIG.adminEmails)||[];
   for(var i=0;i<list.length;i++)if(emailKey(list[i])===a.email)return true;
   return false;
 }
-
-/* ---------- database ---------- */
 var cache=null,listeners=[];
 function load(){
   if(cache)return cache;
@@ -94,8 +74,6 @@ function persist(){rawSet(DB_KEY,JSON.stringify(cache))}
 function clone(x){return x===undefined?undefined:JSON.parse(JSON.stringify(x))}
 function segs(p){return String(p).split('/').filter(Boolean)}
 function me(){return session()}
-
-/* Who may read or write what. This mirrors the rules a real server would enforce. */
 function allowed(op,path){
   var s=session();if(!s)return false;
   if(s.role==='admin')return true;
@@ -115,7 +93,6 @@ function snapDoc(path){
 }
 function snapCol(path){
   var n=segs(path).length,docs=load().docs,out=[];
-  /* listing a whole collection needs read rights on the collection itself */
   var colOk=n===1?(path==='sites'||path==='reports'||(session()&&session().role==='admin')):allowed('read',path+'/x');
   if(colOk)Object.keys(docs).sort().forEach(function(k){
     if(k.indexOf(path+'/')===0&&segs(k).length===n+1)out.push({id:segs(k).pop(),data:(function(v){return function(){return clone(v)}})(docs[k])});
@@ -132,7 +109,6 @@ window.addEventListener('storage',function(e){
   if(e.key===DB_KEY){cache=null;notify()}
   if(e.key===ACC_KEY){accCache=null}
 });
-
 function write(path,fn){
   if(!allowed('write',path))throw err('permission_denied','Not allowed');
   var db=load(),before=db.docs[path];
@@ -160,20 +136,14 @@ function col(path){
   };
 }
 var db={doc:doc,collection:col};
-
-/* ---------- public interface ---------- */
 var Store={
   available:storageOk,
   db:db,
   session:session,
-
-  /* signed-in person, or null */
   user:function(){
     var s=session();if(!s)return null;
     return {id:s.uid,email:s.email,isAdmin:s.role==='admin'};
   },
-
-  /* create an account and its member profile, then sign in */
   register:async function(v){
     var k=emailKey(v.email);
     if(findByEmail(k))throw err('email_taken','An account with this email already exists. Sign in instead.');
@@ -191,7 +161,7 @@ var Store={
     var k=emailKey(email),until=lockState(k);
     if(until){var s=Math.ceil((until-Date.now())/1000);throw err('locked','Too many attempts. Try again in '+s+' seconds.')}
     var a=findByEmail(k),bad=err('bad_login','Email or password is incorrect.');
-    if(!a){/* spend the same time as a real check so timing does not reveal which emails exist */
+    if(!a){
       try{await derive(password,newSalt(),ITER)}catch(e){if(e.code==='insecure_context')throw e}
       noteFail(k);throw bad}
     var h=await derive(password,a.salt,a.iter||ITER);
@@ -208,8 +178,6 @@ var Store={
     var salt=newSalt();a.salt=salt;a.iter=ITER;a.hash=await derive(newPw,salt,ITER);
     saveAccounts();
   },
-
-  /* admin tool: wipe everything stored by this site in this browser and load the starter data again */
   resetAll:function(){
     var s=session();if(!s||s.role!=='admin')throw err('permission_denied','Admins only');
     [DB_KEY,ACC_KEY,LOCK_KEY].forEach(rawDel);cache=null;accCache=null;
