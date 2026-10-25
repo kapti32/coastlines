@@ -1,8 +1,4 @@
-/* Coastlines starter data for the Indian coast.
-   52 coastal sites and 24 published reports from newspapers and magazines, each linked to its source.
-   There are no sample or generated reports and no community reports until members submit and an admin verifies them.
-   Severity and condition are an editorial reading of the cited articles (see README.md), not survey measurements.
-   Sites with no source are "Not assessed". Coordinates are approximate village or town positions. */
+//DATA HAS BEEN TAKEN THROUGH SEVERAL NEWS REPORTS//
 (function(){
 "use strict";
 var HASHES = {"member": {"salt": "FdQiqN5cryX90IfEPbIQ8A==", "hash": "W8aU94TvcM0HTXfiFcsIRh62u2WUX+3YoZJXd7Tcmk8="}};
