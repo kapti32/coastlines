@@ -1,9 +1,7 @@
 (function(){
 "use strict";
-
 var DB_KEY='cl.db.v1',ACC_KEY='cl.accounts.v1',SES_KEY='cl.session.v1',LOCK_KEY='cl.lock.v1';
 var ITER=150000,SESSION_MS=8*3600*1000,MAX_FAILS=5,LOCK_MS=60*1000;
-
 function err(code,msg){var e=new Error(msg||code);e.code=code;return e}
 var storageOk=(function(){try{var k='cl.probe';localStorage.setItem(k,'1');localStorage.removeItem(k);return true}catch(e){return false}})();
 var memory={};
@@ -183,7 +181,6 @@ var Store={
     [DB_KEY,ACC_KEY,LOCK_KEY].forEach(rawDel);cache=null;accCache=null;
     load();accounts();notify();
   },
-
   usedBytes:function(){var n=0;[DB_KEY,ACC_KEY].forEach(function(k){n+=(rawGet(k)||'').length});return n}
 };
 window.CLStore=Store;
