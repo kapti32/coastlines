@@ -1,11 +1,5 @@
-/* Coastlines opening animation (sign-in page only). The markup comes from assets/js/intro.js.
-   Order of events: the scene fades in (waves, sun, shore), the loading bar fills, then the water rises over the
-   scene (.go), bubbles stream up, and the scene fades out (.out) to show the page.
-   While it runs, <html> has the class intro-on and everything else on the page stays hidden. */
-
 html.intro-on { overflow: hidden; }
 html.intro-on body > *:not(#intro):not(#intro-bub) { visibility: hidden; }
-
 #intro {
   --shore: 24vh;
   position: fixed; inset: 0; z-index: 1000; overflow: hidden;
@@ -16,8 +10,6 @@ html.intro-on body > *:not(#intro):not(#intro-bub) { visibility: hidden; }
 }
 #intro, #intro * { box-sizing: border-box; }
 @keyframes i-in { from { opacity: 0; } to { opacity: 1; } }
-
-/* ---------- sky, sun, sea ---------- */
 .i-sky { position: absolute; inset: 0; background: linear-gradient(180deg, #04152a 0%, #0a3256 24%, #1b5a82 42%, #4f8aa6 51%, #e3917b 56%, #f8c47b 58%, #f8c47b 100%); }
 .i-stars { position: absolute; left: 0; right: 0; top: 0; height: 40%; }
 .i-stars i { position: absolute; border-radius: 50%; background: #fff; opacity: .8; animation: i-twinkle 3.4s ease-in-out infinite; }
@@ -35,8 +27,6 @@ html.intro-on body > *:not(#intro):not(#intro-bub) { visibility: hidden; }
   animation: i-gl 2.8s ease-in-out infinite;
 }
 @keyframes i-gl { 0%, 100% { opacity: .55; transform: translateX(-50%) scaleX(.94); } 50% { opacity: 1; transform: translateX(-50%) scaleX(1.04); } }
-
-/* ---------- wave layers ---------- */
 .i-layers { position: absolute; inset: 0; transition: transform .8s cubic-bezier(.55, 0, .25, 1); }
 .i-wl { position: absolute; left: 0; right: 0; height: 12vh; animation: i-bob 6s ease-in-out infinite; }
 @keyframes i-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(1.3vh); } }
@@ -46,8 +36,6 @@ html.intro-on body > *:not(#intro):not(#intro-bub) { visibility: hidden; }
 .i-under { position: absolute; left: 0; right: 0; top: calc(12vh - 1px); height: 100vh; }
 .i-foam { fill: none; stroke: rgba(239, 255, 253, .85); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 70 36 16 30; vector-effect: non-scaling-stroke; }
 .i-foam2 { stroke: #fff; stroke-width: 3.6; stroke-dasharray: none; opacity: .95; }
-
-/* ---------- the shore ---------- */
 .i-sand { position: absolute; left: 0; bottom: 0; width: 100%; height: var(--shore); display: block; transition: transform .8s ease-in; }
 .i-clip { position: absolute; left: 0; bottom: 0; width: 100%; height: calc(var(--shore) + 2vh); overflow: hidden; pointer-events: none; transition: transform .8s ease-in; }
 .i-wet { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(140, 104, 56, 0), rgba(130, 94, 48, .55)); opacity: 0; animation: i-wet 7s ease-in-out infinite; }
@@ -58,7 +46,6 @@ html.intro-on body > *:not(#intro):not(#intro-bub) { visibility: hidden; }
 @keyframes i-wash { 0%, 100% { transform: translateY(-76%); } 38% { transform: translateY(-14%); } }
 @keyframes i-wash2 { 0%, 100% { transform: translateY(-80%); } 40% { transform: translateY(-30%); } }
 
-/* ---------- the middle of the screen ---------- */
 .i-ui {
   position: absolute; left: 0; right: 0; top: 11vh; padding: 0 20px;
   display: flex; flex-direction: column; align-items: center; text-align: center;
@@ -90,8 +77,6 @@ html.intro-on body > *:not(#intro):not(#intro-bub) { visibility: hidden; }
 }
 #intro .i-skip:hover { background: rgba(4, 22, 43, .75); }
 #intro .i-skip:focus-visible { outline: 2px solid #8ff0ea; outline-offset: 2px; }
-
-/* ---------- the finish: water rises, bubbles stream up, the scene fades to the page ---------- */
 #intro.go .i-layers { transform: translateY(-68vh); }
 #intro.go .i-sand, #intro.go .i-clip { transform: translateY(42vh); }
 #intro.go .i-ui { opacity: 0; transform: translateY(-14px); }
@@ -113,8 +98,6 @@ html.intro-on body > *:not(#intro):not(#intro-bub) { visibility: hidden; }
 }
 @keyframes i-rise { 0% { transform: translateY(0) scale(.6); opacity: 0; } 8% { opacity: 1; } 85% { opacity: .95; } 100% { transform: translateY(var(--y)) scale(1.12); opacity: 0; } }
 @keyframes i-wob { from { transform: translateX(calc(var(--a) * -1)); } to { transform: translateX(var(--a)); } }
-
-/* ---------- replay button on the sign-in page ---------- */
 #intro-replay {
   position: fixed; left: 14px; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); z-index: 30;
   padding: 7px 14px; min-height: 36px; font: 500 .82rem var(--f-body, 'IBM Plex Sans', system-ui, sans-serif);
@@ -123,14 +106,12 @@ html.intro-on body > *:not(#intro):not(#intro-bub) { visibility: hidden; }
 }
 #intro-replay:hover { background: rgba(4, 22, 43, .8); }
 #intro-replay:focus-visible { outline: 2px solid #8ff0ea; outline-offset: 2px; }
-
 @media (max-height: 520px) {
   .i-ui { top: 5vh; }
   .i-mark, .i-tag { display: none; }
   .i-name { font-size: 2.6rem; }
   .i-bar { margin-top: 14px; }
 }
-
 @media (prefers-reduced-motion: reduce) {
   #intro, #intro * , #intro-bub, #intro-bub * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
