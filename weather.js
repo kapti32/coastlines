@@ -1,6 +1,3 @@
-/* Live weather for a coastal position.
-   Air conditions: OpenWeather when CL_CONFIG.openWeatherKey is set, otherwise Open-Meteo (no key needed).
-   Sea conditions (wave height, period, sea level): Open-Meteo Marine. Results are cached for ten minutes. */
 (function(){
 "use strict";
 var CFG=window.CL_CONFIG||{};
@@ -42,7 +39,7 @@ function marine(lat,lng){
     var c=j&&j.current;if(!c)return null;
     var m={wave:num(c.wave_height),waveDir:num(c.wave_direction),period:num(c.wave_period),sst:num(c.sea_surface_temperature),level:num(c.sea_level_height_msl)};
     return m.wave===null&&m.period===null&&m.sst===null&&m.level===null?null:m;
-  }).catch(function(){return null});   /* marine data is a bonus: never fail the card because of it */
+  }).catch(function(){return null});  
 }
 
 function peek(lat,lng){
@@ -71,7 +68,6 @@ function compass(d){return d===null?'':DIRS[Math.round(((d%360)+360)%360/22.5)%1
 function f1(v){return v===null?'–':(Math.round(v*10)/10).toString()}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 
-/* markup for a finished reading */
 function html(w){
   var cell=function(l,v){return '<div><span>'+l+'</span><b>'+v+'</b></div>'};
   var air=[
@@ -88,8 +84,6 @@ function html(w){
   return '<div class="wxhead"><b>'+esc(w.text||'Current conditions')+'</b>'+(w.rain?'<span>'+f1(w.rain)+' mm rain</span>':'')+'</div><div class="wxgrid">'+air.concat(sea).join('')+'</div>'+
     '<p class="wxsrc">'+(w.time?'Reading from '+esc(String(w.time).replace('T',' ').slice(0,16))+'. ':'')+'Weather data by <a href="'+w.url+'" target="_blank" rel="noopener noreferrer">'+esc(w.provider)+'</a>'+(s?' and <a href="https://open-meteo.com/en/docs/marine-weather-api" target="_blank" rel="noopener noreferrer">Open-Meteo Marine</a> (DWD wave model)':'')+'.</p>';
 }
-
-/* fill every <div class="wx" data-lat data-lng> inside root; safe to call repeatedly */
 function mount(root){
   Array.prototype.forEach.call((root||document).querySelectorAll('.wx[data-lat]'),function(el){
     var lat=el.getAttribute('data-lat'),lng=el.getAttribute('data-lng'),token=lat+','+lng;
@@ -108,6 +102,5 @@ function mount(root){
     });
   });
 }
-
 window.CLWeather={get:get,peek:peek,mount:mount,html:html,compass:compass};
 })();
