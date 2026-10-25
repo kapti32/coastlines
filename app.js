@@ -4,8 +4,6 @@ var PAGE=document.body.getAttribute('data-page')||'auth';
 var PAGES={auth:'index.html',dashboard:'dashboard.html',reports:'reports.html',detail:'report-details.html',report:'submit.html',profile:'profile.html',admin:'admin.html'};
 var $=function(s,r){return (r||document).querySelector(s)};
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
-
-/* ---------- reference data ---------- */
 var TYPES={
   erosion:{n:'Shoreline erosion',m:'Shoreline retreat',u:'m',c:'--t-erosion',max:1000},
   flood:{n:'Flooding incident',m:'Flood depth',u:'cm',c:'--t-flood',max:500},
@@ -18,9 +16,7 @@ var SITE_CONDS=['Not assessed'].concat(CONDS);
 var BOUNDS={lat0:6.4,lat1:25.0,lng0:67.5,lng1:94.8};
 var MAP={s:32,W:873.6,H:595.2};
 function px(lng,lat){return [(lng-BOUNDS.lng0)*MAP.s,(BOUNDS.lat1-lat)*MAP.s]}
-/* the nine coastal states and four coastal union territories, in order around the coast from the north-west */
 var STATES=['Gujarat','Daman and Diu','Maharashtra','Goa','Karnataka','Kerala','Tamil Nadu','Puducherry','Andhra Pradesh','Odisha','West Bengal','Lakshadweep','Andaman and Nicobar Islands'];
-/* map zoom areas: key, label, [west, south, east, north] in degrees, states shown */
 var REGIONS=[
   ['all','Whole Indian coast',null,[]],
   ['gj','Gujarat, Daman and Diu',[68.0,20.0,73.4,23.9],['Gujarat','Daman and Diu']],
@@ -33,16 +29,11 @@ var REGIONS=[
   ['ln','Lakshadweep',[71.6,8.0,74.2,12.6],['Lakshadweep']],
   ['an','Andaman and Nicobar Islands',[92.0,6.5,94.2,13.9],['Andaman and Nicobar Islands']]
 ];
-/* schematic mainland coast from Pakistan to Myanmar, west to east. The first and last points sit on the map edges. */
 var COAST=[[67.5,24.05],[68.1,23.8],[68.5,23.72],[68.75,23.25],[69.2,22.85],[69.72,22.78],[70.2,22.98],[70.55,22.95],[70.1,22.55],[69.5,22.4],[69.07,22.45],[68.97,22.22],[69.35,21.8],[69.65,21.62],[70.3,20.95],[70.95,20.72],[71.5,20.95],[72.0,21.3],[72.15,21.75],[72.45,22.2],[72.6,21.8],[72.62,21.3],[72.7,21.05],[72.8,20.45],[72.75,19.9],[72.85,19.2],[72.82,18.9],[72.95,18.6],[73.2,17.5],[73.3,16.95],[73.5,16.0],[73.75,15.5],[74.1,14.8],[74.45,14.2],[74.7,13.3],[74.85,12.8],[75.0,12.4],[75.4,11.85],[75.8,11.2],[76.2,10.2],[76.3,9.5],[76.55,8.95],[76.95,8.45],[77.4,8.1],[77.55,8.08],[78.1,8.7],[78.6,9.0],[79.1,9.25],[79.4,9.3],[79.85,10.3],[79.85,10.75],[79.85,11.9],[80.3,13.0],[80.3,13.6],[80.1,14.4],[80.1,15.5],[80.6,15.8],[81.15,16.2],[82.0,16.6],[82.3,17.0],[83.3,17.7],[84.1,18.3],[84.9,19.25],[85.5,19.75],[85.85,19.8],[86.7,20.3],[86.95,20.8],[87.0,21.5],[87.55,21.62],[88.05,21.65],[88.6,21.65],[89.0,21.7],[89.6,21.9],[90.4,22.1],[91.3,22.4],[91.9,22.3],[92.1,21.3],[92.7,20.2],[93.6,19.3],[94.4,18.3],[94.8,17.2]];
-/* island chains drawn as thick rounded lines: Andaman and Nicobar, then Lakshadweep dots */
 var ISLES=[[[92.95,13.45],[92.85,12.7],[92.9,12.0],[92.75,11.6],[92.7,11.1]],[[92.55,10.8],[92.58,10.55]],[[92.78,9.2],[92.79,9.12]],[[93.5,8.05],[93.6,8.25]],[[93.75,7.25],[93.9,6.85]]];
 var DOTS=[[72.18,10.86],[72.64,10.57],[72.73,11.12],[73.05,8.28],[72.3,10.1]];
-/* name, lng, lat, dx, dy, anchor: e = text ends at the point, s = text starts at it, m = centred */
 var PLACES=[['Mumbai',72.82,18.95,-8,-4,'e'],['Kochi',76.27,9.97,-8,4,'e'],['Chennai',80.28,13.08,8,4,'s'],['Visakhapatnam',83.3,17.7,8,4,'s'],['Kanyakumari',77.55,8.08,0,15,'m']];
 var EV_LIMIT=180000;
-
-/* ---------- pure helpers (validation, status, geometry) ---------- */
 function validPhone(s){if(s==='')return true;var d=s.replace(/\D/g,'');return /^\+?[\d\s-]{7,18}$/.test(s)&&d.length>=7&&d.length<=15}
 function validEmail(s){return s===''||/^[^\s@]{1,64}@[^\s@]+\.[^\s@]{2,}$/.test(s)&&s.length<=120}
 function kmBetween(a,b,c,d){var R=6371,t=Math.PI/180,dl=(c-a)*t,dn=(d-b)*t,x=Math.pow(Math.sin(dl/2),2)+Math.cos(a*t)*Math.cos(c*t)*Math.pow(Math.sin(dn/2),2);return 2*R*Math.asin(Math.sqrt(x))}
@@ -91,8 +82,6 @@ function validateReport(v,c){
 }
 function statusFor(id,pubIds,revs){if(pubIds[id])return 'verified';var r=revs[id];return r&&r.status==='rejected'?'rejected':'pending'}
 function newId(){return 'R-'+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,5).toUpperCase()}
-
-/* ---------- state ---------- */
 var S={ready:false,painted:false,db:null,uid:null,admin:false,canWrite:true,member:null,loadErr:'',
   sites:[],pubs:[],mine:[],ownRevs:{},members:[],inbox:[],inboxRevs:{},inboxState:'idle',
   view:PAGE,back:'reports',detailId:null,sel:null,siteSel:null,showSites:true,mapTypes:{erosion:1,flood:1,change:1,sealevel:1},
@@ -125,8 +114,6 @@ async function guard(fn,ok){
   catch(e){toast(dbMsg(e));return false}
   finally{S.busy=false}
 }
-
-/* ---------- session, redirects and small browser preferences ---------- */
 function pref(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 function drop(k){try{sessionStorage.removeItem(k)}catch(e){}}
 function ss(k,v){try{if(v===undefined)return sessionStorage.getItem(k);sessionStorage.setItem(k,v)}catch(e){return null}}
@@ -137,8 +124,6 @@ function safeNext(n){
 }
 function thisFile(){return (location.pathname.split('/').pop()||PAGES.dashboard)+location.search}
 function navTo(v,qs){location.href=PAGES[v]+(qs?'?'+qs:'')}
-
-/* ---------- data layer ---------- */
 function snapList(s){return s.docs.map(function(d){var x=Object.assign({},d.data());x.id=d.id;return x})}
 function sub(key,ref,fn){
   S.need.push(key);
@@ -195,8 +180,6 @@ async function loadInbox(){
   }catch(e){S.inboxState='error';toast(dbMsg(e))}
   S.got.inbox=1;S.dirty=true;repaint();
 }
-
-/* ---------- pieces ---------- */
 var LOGO='<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M3 12c3.3-3 6.7-3 10 0s6.7 3 10 0 4-2 6-1.5"/><path d="M3 20c3.3-3 6.7-3 10 0s6.7 3 10 0 4-2 6-1.5"/><path d="M3 27.5c3.3-2.4 6.7-2.4 10 0s6.7 2.4 10 0" opacity=".5"/></svg>';
 function sevMeter(n){var h='<span class="sev s'+n+'" title="'+SEV[n]+'" aria-label="Severity: '+SEV[n]+'">';for(var i=1;i<=4;i++)h+='<i'+(i<=n?' class="on"':'')+'></i>';return h+'</span>'}
 function pill(st){return '<span class="pill '+st+'">'+st+'</span>'}
@@ -231,9 +214,6 @@ function evHtml(list,rm){
     return '<div class="ph">'+inner+(x.kind==='video'?'<span class="vbadge">Video · '+fmtSize(x.size||0)+'</span>':'')+(rm?'<button type="button" data-act="rmev" data-i="'+i+'" aria-label="Remove '+esc(x.name)+'">×</button>':'')+'</div>';
   }).join('')+'</div>'+(hasV?'<p class="hint" style="margin-top:6px">A still frame is kept from each video, not the full clip.</p>':'');
 }
-
-
-/* ---------- sources and photographs ---------- */
 function okUrl(u){return /^https:\/\/[^\s"'<>]+$/.test(String(u||''))?u:'#'}
 function srcLink(r){var x=r.source||{};return '<a href="'+esc(okUrl(x.url))+'" target="_blank" rel="noopener noreferrer">'+esc(x.pub||r.authorName)+'</a>'}
 function srcBlock(r){
@@ -267,12 +247,9 @@ function gallery(){
     part.map(function(x){return figHtml(x.img[0],480,x.n+', '+x.st)}).join('')+'</div>'+
     (withImg.length>12?'<div style="margin-top:12px"><button class="btn" data-act="photosall">'+(S.photosAll?'Show fewer photos':'Show all '+withImg.length+' beaches')+'</button></div>':'')+'</section>';
 }
-
-/* ---------- map ---------- */
 function boxFor(key){var r=REGIONS.filter(function(x){return x[0]===key})[0];return r&&r[2]||null}
 function regionOfState(st){var r=REGIONS.filter(function(x){return x[3].indexOf(st)>-1})[0];return r?r[0]:'all'}
 function focusBox(lat,lng,span){var dx=span/2,dy=span/2/(MAP.W/MAP.H);return [lng-dx,lat-dy,lng+dx,lat+dy]}
-/* the part of the map to show: x, y, w, h in map units, and k = how zoomed in (1 = whole coast) */
 function viewOf(box){
   var W=MAP.W,H=MAP.H;
   if(!box)return {x:0,y:0,w:W,h:H,k:1};
@@ -290,7 +267,6 @@ function mapSvg(list,o){
   for(var i=1;i<p.length-1;i++){d+='Q'+p[i][0]+','+p[i][1]+' '+(p[i][0]+p[i+1][0])/2+','+(p[i][1]+p[i+1][1])/2}
   d+='L'+p[p.length-1][0]+','+p[p.length-1][1];
   var land=d+'L'+W+',0L0,0L0,'+p[0][1]+'Z',g='';
-  /* graticule: coarser when the whole coast is shown, finer when zoomed */
   var step=v.k>0.6?5:v.k>0.28?2:1,x0=BOUNDS.lng0+v.x/MAP.s,x1=x0+v.w/MAP.s,y1=BOUNDS.lat1-v.y/MAP.s,y0=y1-v.h/MAP.s,l;
   for(l=Math.ceil(x0/step)*step;l<=x1;l+=step){var x=px(l,0)[0];g+='<line class="grat" x1="'+x+'" y1="'+v.y+'" x2="'+x+'" y2="'+(v.y+v.h)+'"/><text class="glbl" x="'+(x+f(4))+'" y="'+(v.y+v.h-f(8))+'" style="font-size:'+f(12)+'px">'+l+'°E</text>'}
   for(l=Math.ceil(y0/step)*step;l<=y1;l+=step){var y=px(0,l)[1];g+='<line class="grat" x1="'+v.x+'" y1="'+y+'" x2="'+(v.x+v.w)+'" y2="'+y+'"/><text class="glbl" x="'+(v.x+f(6))+'" y="'+(y-f(5))+'" style="font-size:'+f(12)+'px">'+l+'°N</text>'}
@@ -338,8 +314,6 @@ async function saveFile(name,data){
     setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1500);return true;
   }catch(e){toast('Could not save the file. Use Copy instead.');return false}
 }
-
-/* ---------- charts and lists ---------- */
 function trendSvg(list){
   var yr=new Date().getFullYear(),first=yr,cols=[],i;
   list.forEach(function(r){var y=+String(r.date).slice(0,4);if(y>1950&&y<first)first=y});
@@ -372,7 +346,6 @@ function rowsHtml(l,showStatus){
   }).join('')+'</div>';
 }
 function typeOptions(sel,all){return (all?'<option value="all">All types</option>':'')+Object.keys(TYPES).map(function(k){return '<option value="'+k+'"'+(sel===k?' selected':'')+'>'+TYPES[k].n+'</option>'}).join('')}
-/* ---------- page 2: coastal map dashboard (whole Indian coast) ---------- */
 function stateOf(r){return r.state||((r.siteId&&siteById(r.siteId))||{}).st||''}
 function zoomRow(id,sel){return '<div class="zoomrow"><label for="'+id+'">Zoom to</label><select id="'+id+'">'+REGIONS.map(function(r){return '<option value="'+r[0]+'"'+(sel===r[0]?' selected':'')+'>'+esc(r[1])+'</option>'}).join('')+'</select></div>'}
 function stateBars(list){
@@ -454,8 +427,6 @@ function sitesTable(){
   return '<div class="tablebox" style="margin-top:12px"><table style="min-width:760px"><thead><tr><th>Location</th><th>State or UT</th><th>Position</th><th>Shoreline condition</th><th>Erosion severity</th><th>Reports</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     (all.length>10?'<div style="margin-top:12px"><button class="btn" data-act="sitesall">'+(S.sitesAll?'Show fewer sites':'Show all '+all.length+' sites')+'</button></div>':'');
 }
-
-/* ---------- page 4: community reports ---------- */
 function filtered(){
   var f=S.f,q=f.q.trim().toLowerCase();
   var l=S.pubs.filter(function(r){return (f.type==='all'||r.type===f.type)&&(f.sev==='all'||String(r.severity)===f.sev)&&(f.state==='all'||stateOf(r)===f.state)&&(f.site==='all'||r.siteId===f.site)&&(f.src==='all'||(f.src==='press')===(r.kind==='press'))&&(!q||(r.place+' '+r.desc+' '+r.authorName+' '+stateOf(r)+' '+(r.source?r.source.title:'')).toLowerCase().indexOf(q)>-1)});
@@ -476,8 +447,6 @@ function reportsView(){
   return '<section class="hero"><h1>Community reports</h1><p class="muted" style="margin-top:8px;max-width:60ch">Published press and magazine reports, and verified reports from coastal communities, across India. Open one to see its source or evidence and where it sits on the coast.</p></section>'+
   '<section class="card"><div class="filters"><select id="f-type" aria-label="Filter by type">'+typeOptions(S.f.type,true)+'</select><select id="f-sev" aria-label="Filter by severity">'+sv+'</select><select id="f-state" aria-label="Filter by state or union territory">'+stateOptions(S.f.state,true)+'</select><select id="f-site" aria-label="Filter by site">'+so+'</select><select id="f-src" aria-label="Filter by source"><option value="all"'+(S.f.src==='all'?' selected':'')+'>All sources</option><option value="press"'+(S.f.src==='press'?' selected':'')+'>Press reports</option><option value="community"'+(S.f.src==='community'?' selected':'')+'>Community reports</option></select><select id="f-sort" aria-label="Sort"><option value="new"'+(S.f.sort==='new'?' selected':'')+'>Newest first</option><option value="sev"'+(S.f.sort==='sev'?' selected':'')+'>Most severe first</option></select><input id="f-q" type="search" placeholder="Search place, state, description, source or reporter" value="'+esc(S.f.q)+'" aria-label="Search reports"></div><div id="reclist">'+listBlock()+'</div></section>';
 }
-
-/* ---------- page 5: report details ---------- */
 function backLink(){return '<a class="back" href="'+PAGES[S.back]+'">← Back</a>'}
 function detailView(){
   var r=findReport(S.detailId);
@@ -499,8 +468,6 @@ function detailView(){
   (site?'<h3 style="margin-top:18px">'+esc(site.n)+'</h3><dl class="kv"><dt>Condition</dt><dd>'+esc(site.cond)+'</dd><dt>Erosion severity</dt><dd>'+sevMeter(site.sev)+' '+SEV[site.sev]+'</dd></dl><p style="font-size:.9rem">'+esc(site.note)+'</p>'+photoBlock(site)+refsBlock(site):'')+
   (others.length?'<h3 style="margin-top:18px;font-size:.92rem">Other reports at this site</h3>'+rowsHtml(others,false):'')+'</div></div>';
 }
-
-/* ---------- page 3: report submission ---------- */
 function reportView(){
   if(!S.member)return gate('You need a member profile to submit a report.');
   var f=S.form,today=localDate(0);
@@ -580,8 +547,6 @@ async function submitReport(){
   var done=await guard(function(){return S.db.doc('submissions/'+S.uid+'/items/'+id).set(rep)},'Report '+id+' sent for review');
   if(done){drop('cl.draft');location.href=PAGES.detail+'?id='+encodeURIComponent(id)+'&from=profile'}
 }
-
-/* ---------- page 1: sign in and register ---------- */
 function gate(msg){
   return '<div class="card authcard"><h2>Profile not found</h2><p class="muted" style="margin-top:8px">'+esc(msg||'Your member profile could not be found in this browser.')+' Sign out, then create your account again.</p><div class="acts" style="margin-top:14px"><button class="btn pri" data-act="logout">Sign out</button></div></div>';
 }
@@ -675,8 +640,6 @@ async function changePw(){
   catch(x){if(x&&x.code==='bad_login')showErrs({cur:x.message},{cur:'pw-cur'});else toast(authMsg(x))}
   finally{S.busy=false}
 }
-
-/* ---------- page 6: user profile ---------- */
 function profileView(){
   if(!S.member)return gate();
   var u=S.member,mine=S.mine.slice().sort(byDate),c={verified:0,pending:0,rejected:0};
@@ -694,8 +657,6 @@ async function saveProfile(){
   var ok=await guard(function(){return S.db.doc('members/'+S.uid).update({name:v.name,email:v.email,phone:v.phone,location:v.loc})},'Details saved');
   if(ok){S.member=Object.assign({},S.member,{name:v.name,email:v.email,phone:v.phone,location:v.loc})}
 }
-
-/* ---------- page 7: admin panel ---------- */
 function csv(kind){
   var q=function(s){return '"'+String(s==null?'':s).replace(/"/g,'""')+'"'},h,rows;
   if(kind==='kml')return kml(adminAll());
@@ -737,8 +698,6 @@ async function reviewAct(id,status){
   },status==='verified'?'Report '+id+' is now public':'Report '+id+' rejected');
   if(ok){S.inboxRevs[id]={id:id,status:status,note:note};if(status==='verified'&&!S.pubs.some(function(x){return x.id===id}))S.pubs=S.pubs.concat([r]);render()}
 }
-
-/* ---------- render and events ---------- */
 var FOOT='<footer class="foot">Map links open Google Earth. Live weather by Open-Meteo or OpenWeather.</footer>';
 function render(){
   var body;
