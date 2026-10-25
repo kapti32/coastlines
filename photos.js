@@ -1,12 +1,4 @@
-/* Coastlines photo credits.
-   Beach photographs are hotlinked from Wikimedia Commons. Each one carries a link to its Commons file page. This
-   file asks the Commons API who took each photo and under which licence, and writes that into the credit line
-   ("Photo: <photographer> · <licence>"). If the lookup fails or the browser is offline, the credit stays as
-   "Photo: Wikimedia Commons", which still links to the file page.
-
-   Author names come back from Commons as HTML. They are turned into plain text with DOMParser and set with
-   textContent, never innerHTML, so nothing from Commons is ever run as markup. Answers are kept in
-   sessionStorage so each file is looked up once per visit. */
+//usage of wikimedia//
 (function () {
   'use strict';
   var API = 'https://commons.wikimedia.org/w/api.php';
