@@ -1,14 +1,3 @@
-/* Coastlines opening animation: a shore with rolling waves, a loading bar, then bubbles that clear to the page.
-   It runs on the sign-in page, once per browser session, and takes about five seconds. Visitors can skip it
-   (button, click or tap anywhere, Escape). It does not run when:
-     - the visitor asked their device for reduced motion, or turned Motion off in the header (no replay button then),
-     - the visitor is already signed in (they go straight to the dashboard),
-     - it has already played in this tab's session.
-   A small "Replay intro" button on the sign-in page plays it again (or add ?intro=1 to the address; ?intro=0 skips it).
-   Set intro: false in config.js to remove the intro and the replay button altogether (introReplay: false keeps the
-   intro but hides only the button). A visitor who followed a link to an inner page (?next=) goes straight to sign-in.
-   The loading bar follows the real page load (page parsed, scripts and styles loaded, fonts, first screen drawn),
-   but never finishes faster than the animation, so the whole scene is seen. */
 (function () {
   'use strict';
   var D = document, W = window, H = D.documentElement, KEY = 'cl.intro';
@@ -17,7 +6,6 @@
   function get(s, k) { try { return s ? s.getItem(k) : null; } catch (e) { return null; } }
   function put(s, k, v) { try { if (s) s.setItem(k, v); } catch (e) {} }
   function param(n) { try { return new URLSearchParams(W.location.search).get(n); } catch (e) { return null; } }
-
   var cfg = W.CL_CONFIG || {};
   if (cfg.intro === false) return;
   var ses = area('sessionStorage'), loc = area('localStorage');
@@ -26,8 +14,6 @@
   try { if (W.matchMedia && W.matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
   if (get(loc, 'cl.still') === '1') return;
   try { var sess = JSON.parse(get(loc, 'cl.session.v1') || 'null'); if (sess && sess.exp > Date.now()) return; } catch (e) {}
-
-  /* the replay button: a body child, so it stays hidden while the intro runs and shows when it is over */
   function replayButton() {
     if (cfg.introReplay === false || D.body.getAttribute('data-page') !== 'auth') return;
     function add() {
@@ -43,13 +29,9 @@
 
   if (ask === '0') return;
   if (ask !== '1' && (get(ses, KEY) === '1' || param('next'))) return;
-  if (ask === '1') {   /* keep the address tidy so a reload does not replay it */
+  if (ask === '1') {  
     try { var u = new URL(W.location.href); u.searchParams.delete('intro'); W.history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) {}
   }
-
-  /* ---------- scene ---------- */
-  /* One wave layer: n periods per screen width, amplitude and phase in a 100-unit-high box. The path covers two
-     screen widths so the layer can slide one width and loop with no seam. */
   function wave(n, amp, ph, fill, foam) {
     var steps = n * 20 * 2, top = '', i, x, y;
     for (i = 0; i <= steps; i++) {
@@ -61,7 +43,6 @@
       '<path d="' + top + 'L2400,100L0,100Z" fill="' + fill + '"/>' +
       (foam ? '<path class="i-foam" d="' + top + '"/>' : '') + '</svg>';
   }
-  /* periods, amplitude, phase, colour, top (% of screen), seconds per loop, reverse, foam crest */
   var LAYERS = [
     [5, 6, 0.4, '#4cc3c6', 57.5, 36, 1, 0],
     [4, 8, 1.7, '#2aa4bf', 61.5, 25, 0, 0],
@@ -75,10 +56,8 @@
         '<div class="i-under" style="background:' + l[3] + '"></div></div></div>';
     }).join('');
   }
-  /* the wash of water that slides up the sand: a flat top and a wavy foam edge along the bottom */
   function washShape(id) {
     var up = '', down = '', i, x, y;
-    /* two sine waves of different lengths, so the foam line is uneven like a real swash */
     function edge(x) { return (86 + 4.5 * Math.sin(2 * Math.PI * 5 * x / 1200) + 3 * Math.sin(2 * Math.PI * 11 * x / 1200 + 1.3)).toFixed(2); }
     for (i = 0; i <= 120; i++) { x = i * 10; y = edge(x); up += (i ? 'L' : 'M') + x + ',' + y; }
     for (i = 120; i >= 0; i--) { x = i * 10; y = edge(x); down += 'L' + x + ',' + y; }
@@ -129,21 +108,18 @@
   var root = D.getElementById('intro'), bub = D.getElementById('intro-bub');
   var fill = root.querySelector('.i-fillbar'), pct = root.querySelector('.i-pct'), msg = root.querySelector('.i-msg'), bar = root.querySelector('.i-bar'), skipBtn = root.querySelector('.i-skip');
 
-  /* ---------- timing ---------- */
-  var BAR_AT = 700;      /* ms until the bar starts to move */
-  var BAR_MS = 2000;     /* the bar takes at least this long to fill */
-  var GIVE_UP = 6500;    /* after this the page counts as loaded no matter what */
+  var BAR_AT = 700;     
+  var BAR_MS = 2000;   
+  var GIVE_UP = 6500;   
   var T0 = (W.performance && performance.now) ? performance.now() : Date.now();
   function now() { return (W.performance && performance.now) ? performance.now() : Date.now(); }
-
-  /* ---------- what has really loaded ---------- */
   var real = { dom: 0, load: 0, fonts: 0, app: 0 };
   if (D.readyState !== 'loading') real.dom = 1; else D.addEventListener('DOMContentLoaded', function () { real.dom = 1; });
   function fontsWait() {
     var done = false;
     function ok() { if (!done) { done = true; real.fonts = 1; } }
     try { if (D.fonts && D.fonts.ready) D.fonts.ready.then(ok, ok); else ok(); } catch (e) { ok(); }
-    setTimeout(ok, 1500);   /* offline or blocked font servers must not hold the page back */
+    setTimeout(ok, 1500);  
   }
   function onLoad() { real.load = 1; fontsWait(); }
   if (D.readyState === 'complete') onLoad(); else W.addEventListener('load', onLoad);
@@ -153,8 +129,6 @@
     for (i = 0; i < a.children.length; i++) if (a.children[i].nodeName !== 'NOSCRIPT') return true;
     return false;
   }
-
-  /* ---------- loading bar ---------- */
   var shown = 0, last = T0, raf = 0, ended = false, bursting = false, lastAria = 0, stage = -1;
   var MSGS = [[0.25, 'Charting the coast…'], [0.55, 'Loading monitored sites…'], [0.85, 'Checking the tide…'], [1, 'Almost there…']];
   function paint(p) {
@@ -182,13 +156,11 @@
     if (shown >= 1 && !bursting) { bursting = true; setTimeout(burst, 380); }
     raf = W.requestAnimationFrame(tick);
   }
-
-  /* ---------- bubbles, then the page ---------- */
   function rnd(a, b) { return a + Math.random() * (b - a); }
   function bubbles() {
     var n = Math.round(Math.max(22, Math.min(46, W.innerWidth / 30))), out = '', i, longest = 0, s, d, dl;
     for (i = 0; i < n; i++) {
-      s = Math.round(Math.pow(Math.random(), 1.7) * 52 + 12);              /* mostly small, a few large */
+      s = Math.round(Math.pow(Math.random(), 1.7) * 52 + 12);           
       d = rnd(1.4, 2.4); dl = rnd(0, 0.7);
       longest = Math.max(longest, d + dl);
       out += '<div class="bub" style="--x:' + rnd(2, 98).toFixed(1) + '%;--s:' + s + 'px;--d:' + d.toFixed(2) + 's;--dl:' + dl.toFixed(2) +
@@ -210,7 +182,7 @@
     H.classList.remove('intro-on');
   }
   function reveal() {
-    H.classList.remove('intro-on');   /* the page is drawn underneath while the scene fades away */
+    H.classList.remove('intro-on'); 
     root.classList.add('out');
     later(function () { if (root.parentNode) root.parentNode.removeChild(root); }, 1150);
   }
@@ -234,9 +206,7 @@
   function onKey(e) { if (e.key === 'Escape' || e.key === 'Esc') skip(); }
   root.addEventListener('click', skip);
   D.addEventListener('keydown', onKey, true);
-  /* a script error or a very slow device must never leave the page covered */
   later(skip, 14000);
-
   paint(0);
   raf = W.requestAnimationFrame(tick);
   if (D.readyState === 'loading') D.addEventListener('DOMContentLoaded', function () { try { skipBtn.focus({ preventScroll: true }); } catch (e) {} });
